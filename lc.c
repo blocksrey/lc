@@ -5,38 +5,78 @@
 
 // Add highlighting and make dotfiles darker (but don't hide them)
 
-#define ASSERT(expr)\
+#define SHOULD(expression, block)\
 do {\
-	if (!(expr)) {\
-		printf("Line %d failed assertion '%s' in function '%s'\n", __LINE__, #expr, __FUNCTION__);\
+	if (expression) {\
+		printf("Line %d expected '%s' in function '%s'\n", __LINE__, #expression, __FUNCTION__);\
+		block\
 		exit(EXIT_FAILURE);\
 	}\
 } while (0)
 
 int main(int argc, char **argv) {
-	struct dirent *dir_entry;
-	DIR *dir_handle;
-	size_t input_len;
-	char *input_dir;
+	char *flags_string = "bcdflpsu";
+	if (argc == 3) {
+		flags_string = argv[2];
+	}
 
+	unsigned type_mask = 0;
+	for (size_t i = strlen(flags_string); i--;) {
+		switch (flags_string[i]) {
+			case 'b': {
+				type_mask |= DT_BLK;
+				break;
+			}
+			case 'c': {
+				type_mask |= DT_CHR;
+				break;
+			}
+			case 'd': {
+				type_mask |= DT_DIR;
+				break;
+			}
+			case 'f': {
+				type_mask |= DT_REG;
+				break;
+			}
+			case 'l': {
+				type_mask |= DT_LNK;
+				break;
+			}
+			case 'p': {
+				type_mask |= DT_FIFO;
+				break;
+			}
+			case 's': {
+				type_mask |= DT_SOCK;
+				break;
+			}
+			case 'u': {
+				type_mask |= DT_UNKNOWN;
+				break;
+			}
+		}
+	}
+
+	char *dir_string = "./";
 	if (argc == 2) {
-		input_dir = argv[1];
-	}
-	else {
-		input_dir = "./";
+		dir_string = argv[1];
 	}
 
-	input_len = strlen(input_dir);
-	if (input_len < 2 || input_dir[input_len - 1] != '/') {
-		printf("'%s' is malformed\n", input_dir);
-		return 1;
-	}
+	size_t dir_string_len = strlen(dir_string);
 
-	dir_handle = opendir(input_dir);
-	ASSERT(dir_handle != NULL);
+	SHOULD(dir_string[dir_string_len - 1] != '/', {
+		printf("Malformed directory '%s'\n", dir_string);
+	});
 
+	DIR *dir_handle = opendir(dir_string);
+	SHOULD(dir_handle == NULL, {
+		printf("Failed to open directory '%s'\n", dir_string);
+	});
+
+	struct dirent *dir_entry;
 	while ((dir_entry = readdir(dir_handle)) != NULL) {
-		if (dir_entry->d_type == DT_REG) {
+		if ((dir_entry->d_type&type_mask) != 0) {
 			puts(dir_entry->d_name);
 		}
 	}

@@ -1,1 +1,1 @@
-clang lc.c -o lc -Weverything -s -O3 -std=gnu89
+clang -std=gnu99 -Weverything -Wno-declaration-after-statement lc.c -O3 -s -o lc
