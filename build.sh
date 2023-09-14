@@ -1,0 +1,1 @@
+clang lc.c -o lc -Weverything -s -O3 -std=gnu89
